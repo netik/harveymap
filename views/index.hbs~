@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="/stylesheets/lightbox.css" rel="stylesheet">
+    <script src="/javascripts/jquery.min.js"></script>
+    <script src="/javascripts/lightbox.js"></script>
+
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Complex icons</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+      #floating-panel {
+	  position: absolute;
+	  top: 10px;
+	  left: 25%;
+	  z-index: 5;
+	  background-color: #fff;
+	  padding: 5px;
+	  border: 1px solid #999;
+	  text-align: center;
+	  font-family: 'Roboto','sans-serif';
+	  line-height: 30px;
+	  padding-left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="floating-panel">
+    <input id="address" type="textbox" value="San Francisco, CA">
+      <input id="submit" type="button" value="Jump to Address">
+    </div>
+
+    <h1>{{{title}}}</h1>
+
+    <p>
+    <b>To upload a new harvey, click an unused location on the map, then click "Upload Photo"</b>
+    </p>
+
+    <div id="map"></div>
+    <script>
+
+      // The following example creates complex markers to indicate harveyes near
+      // Sydney, NSW, Australia. Note that the anchor is set to (0,32) to correspond
+      // to the base of the flagpole.
+      var marker = null;
+      var map = null;
+      var infowindow = null;
+
+      function initMap() {
+	  infowindow = new google.maps.InfoWindow(
+	      { 
+ 		  size: new google.maps.Size(150,50)
+	      });
+
+          map = new google.maps.Map(document.getElementById('map'), {
+              zoom: 10,
+              center: {lat: -33.9, lng: 151.2}
+          });
+
+	  var geocoder = new google.maps.Geocoder();
+
+          setMarkers(map);
+	  
+	  // setup our click listener
+	  
+	  google.maps.event.addListener(map, 'click', function(event) {
+	      //call function to create marker
+              if (marker) {
+		  marker.setMap(null);
+		  marker = null;
+              }
+	      marker = createMarker(event.latLng, "name", "<b>New Harvey Point</b><br>"+event.latLng+"<br>"+"<a href=\"\">Upload a Photo</a>");
+	  });
+
+	  // set up the geocoder
+          document.getElementById('submit').addEventListener('click', function() {
+              geocodeAddress(geocoder, map);
+          });
+      }
+
+      function geocodeAddress(geocoder, resultsMap) {
+	  var address = document.getElementById('address').value;
+	  geocoder.geocode({'address': address}, function(results, status) {
+              if (status === google.maps.GeocoderStatus.OK) {
+		  resultsMap.setCenter(results[0].geometry.location);
+		  var marker = new google.maps.Marker({
+		      map: resultsMap,
+		      position: results[0].geometry.location
+		  });
+              } else {
+		  alert('Geocode was not successful for the following reason: ' + status);
+              }
+	  });
+      }
+
+      // Data for the markers consisting of a name, a LatLng and a zIndex for the
+      // order in which these markers should display on top of each other.
+      var harveyes = [
+        // Caption, lat, long, zindex, large-file-url
+        ['Bondi Harvey', -33.890542, 151.274856, 4, ''],
+        ['Coogee Harvey', -33.923036, 151.259052, 5, ''],
+        ['Cronulla Harvey', -34.028249, 151.157507, 3, ''],
+        ['Manly Harvey', -33.80010128657071, 151.28747820854187, 2, ''],
+        ['Maroubra Harvey', -33.950198, 151.259302, 1, '']
+      ];
+
+      function setMarkers(map) {
+        // Adds markers to the map.
+
+        // Marker sizes are expressed as a Size of X,Y where the origin of the image
+        // (0,0) is located in the top left of the image.
+
+        // Origins, anchor positions and coordinates of the marker increase in the X
+        // direction to the right and in the Y direction down.
+        var image = {
+          url: '/images/harvey-flag-64x56.jpg',
+          // This marker is 20 pixels wide by 32 pixels high.
+          size: new google.maps.Size(64, 56),
+          // The origin for this image is (0, 0).
+          origin: new google.maps.Point(0, 0),
+          // The anchor for this image is the base of the flagpole at (0, 32).
+          anchor: new google.maps.Point(0, 56)
+        };
+        // Shapes define the clickable region of the icon. The type defines an HTML
+        // <area> element 'poly' which traces out a polygon as a series of X,Y points.
+        // The final coordinate closes the poly by connecting to the first coordinate.
+        var shape = {
+          coords: [1, 1, 64, 56],
+          type: 'rect'
+        };
+
+        for (var i = 0; i < harveyes.length; i++) {
+          var harvey = harveyes[i];
+          var marker = new google.maps.Marker({
+            position: {lat: harvey[1], lng: harvey[2]},
+            map: map,
+            icon: image,
+            shape: shape,
+            title: harvey[0],
+            zIndex: harvey[3],
+            myIndex: i // stash away the index for later use
+          });
+
+          marker.addListener('click', function() {
+             map.setZoom(8);
+             map.setCenter(this.getPosition());
+             console.log(this.getPosition().lat());
+             console.log(this.getPosition().lng());
+             console.log(this.myIndex);
+          });
+
+// mouse over routines, I don't like them but will preserve them.
+//          marker.addListener('mouseover', function() { 
+//             this.setIcon('http://www.christielakekids.com/_images/map_pins/events/canoe-for-kids.png');
+//          });
+
+//          marker.addListener('mouseout', function() { 
+//             this.setIcon(image);
+//          });
+        }
+      }
+
+      function createMarker(latlng, name, html) {
+	  var contentString = html;
+	  var marker = new google.maps.Marker({
+              position: latlng,
+              map: map,
+              zIndex: Math.round(latlng.lat()*-100000)<<5
+          });
+	  
+	  google.maps.event.addListener(marker, 'click', function() {
+              infowindow.setContent(contentString); 
+              infowindow.open(map,marker);
+          });
+	  google.maps.event.trigger(marker, 'click');    
+	  return marker;
+      }
+
+
+</script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key={{{apikey}}}&callback=initMap">
+    </script>
+  </body>
+</html>
