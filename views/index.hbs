@@ -12,6 +12,7 @@
 
     <script>
       // Initialize Firebase
+      var harveyes = [];
       var config = {
         apiKey: "{{{fbase_apikey}}}",
         authDomain: "harveymap-8240b.firebaseapp.com",
@@ -19,17 +20,29 @@
         storageBucket: "",
       };
       firebase.initializeApp(config);
+      var database = firebase.database();
 
-      // we never use credentials.
       firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
           // User is signed in.
           var isAnonymous = user.isAnonymous;
           var uid = user.uid;
           console.log("firebase login: " + uid + ":" + isAnonymous);
+	    console.log(database);
+
+	    database.ref('points').on('value', function(snapshot) {
+		console.log(snapshot.val());
+		// Data for the markers consisting of a name, a LatLng and a zIndex for the
+		// order in which these markers should display on top of each other.
+		for (var key in snapshot.val()) { 
+		    console.log(key);
+		    harveyes.push(snapshot.val()[key]);
+		}
+		setMarkers(map);
+	    });
         } else {
-          // User is signed out.
-         // ...
+          // User is signed out. ignore
+          // ...
         }
       });
 
@@ -39,6 +52,7 @@
         var errorMessage = error.message;
         alert("couldn't sign into firebase. error:" + error.message);
       });
+
     </script>
     
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
@@ -103,8 +117,6 @@
 
 	  var geocoder = new google.maps.Geocoder();
 
-          setMarkers(map);
-	  
 	  // setup our click listener
 	  
 	  google.maps.event.addListener(map, 'click', function(event) {
@@ -136,17 +148,6 @@
               }
 	  });
       }
-
-      // Data for the markers consisting of a name, a LatLng and a zIndex for the
-      // order in which these markers should display on top of each other.
-      var harveyes = [
-        // Caption, lat, long, zindex, large-file-url
-        ['Bondi Harvey', -33.890542, 151.274856, 4, ''],
-        ['Coogee Harvey', -33.923036, 151.259052, 5, ''],
-        ['Cronulla Harvey', -34.028249, 151.157507, 3, ''],
-        ['Manly Harvey', -33.80010128657071, 151.28747820854187, 2, ''],
-        ['Maroubra Harvey', -33.950198, 151.259302, 1, '']
-      ];
 
       function setMarkers(map) {
         // Adds markers to the map.
