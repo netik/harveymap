@@ -175,19 +175,18 @@ firebase.auth().signInAnonymously().catch(function(error) {
 
       function initMap() {
 	  harveyImage = {
-              url: '/images/harvey-flag-64x56.jpg',
-              // This marker is 20 pixels wide by 32 pixels high.
-              size: new google.maps.Size(64, 56),
+              url: '/images/harveymarker-32x46.png',
+              size: new google.maps.Size(32, 46),
               // The origin for this image is (0, 0).
               origin: new google.maps.Point(0, 0),
-              // The anchor for this image is the base of the flagpole at (0, 32).
-              anchor: new google.maps.Point(0, 56)
+              // The anchor for this image is the base, center of the marker.
+              anchor: new google.maps.Point(32, 23)
 	  };
 	  // Shapes define the clickable region of the icon. The type defines an HTML
 	  // <area> element 'poly' which traces out a polygon as a series of X,Y points.
 	  // The final coordinate closes the poly by connecting to the first coordinate.
 	  harveyShape = {
-              coords: [1, 1, 64, 56],
+              coords: [1, 1, 32, 46],
               type: 'rect'
 	  };
 
