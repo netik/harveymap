@@ -9,10 +9,24 @@ It is written completely in Javascript and runs under node.js
 
 Two environment variables are required to run this project:
 
+You might want to put them in a "run.sh" script, to run your server, like so:
+
+```
+#!/bin/bash
+
 # don't check this script in!
-export GMAPI_KEY=xxxxx
-export FBASEAPI_KEY=xxxxx
+export GMAPI_KEY=xxx
+export FBASEAPI_KEY=xxx
+DEBUG=harveymap:* npm start
+```
 
 GMAPI_KEY is a valid google maps API key for acccessing google maps.
 FBASEAPI_KEY is your firebase API key. Don't check these in.
+
+I run this script on Heroku, and just add these environment variables as Heroku config vars.
+
+TODO: Make changes from other users add markers in real time. Firebase supports this but it's not wired up fully yet.
+---
+John Adams
+7/14/2016
 
