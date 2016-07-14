@@ -154,7 +154,8 @@ firebase.auth().signInAnonymously().catch(function(error) {
     <h1>{{{title}}}</h1>
 
     <p>
-    <b>To upload a new harvey, click an unused location on the map, then click "Choose File"</b>
+    <b>To upload a new harvey, click an unused location on the map, enter a new title and click "Choose File"</b><br>
+    <iThe upload will begin immediately after you've selected a file.</i>
     </p>
 
     <div id="floating-panel">
