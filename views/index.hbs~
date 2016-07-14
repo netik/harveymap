@@ -76,7 +76,7 @@ function handleFileSelect(evt) {
     uploadTask.on('state_changed', function(snapshot) { 
 	// Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
 	var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-	$("#progress").html('Upload is ' + progress + '% done');
+	$("#progress").html('Upload is ' + progress.toFixed(2) + '% done');
     },
     function(error) {
         console.error('Upload failed:', error);
