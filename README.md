@@ -1,5 +1,6 @@
 # harveymap
 Collaborative photo posting tool integrated with Google Maps and Firebase.
+Live demo: https://harveymap.herokuapp.com
 
 HarveyMap was built for Odd Salon to allow members to post images of Harvey, our wolpertinger mascot on vacation in various parts of the world.
 
