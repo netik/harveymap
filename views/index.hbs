@@ -1,60 +1,127 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="/stylesheets/lightbox.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
     <script src="/javascripts/jquery.min.js"></script>
-    <script src="/javascripts/lightbox.js"></script>
 
     <script src="https://www.gstatic.com/firebasejs/3.2.0/firebase.js"></script>
     <script src="https://www.gstatic.com/firebasejs/3.2.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/3.2.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/3.2.0/firebase-database.js"></script>
-
-    <script>
-      // Initialize Firebase
-      var harveyes = [];
-      var config = {
-        apiKey: "{{{fbase_apikey}}}",
-        authDomain: "harveymap-8240b.firebaseapp.com",
-        databaseURL: "https://harveymap-8240b.firebaseio.com",
-        storageBucket: "",
-      };
-      firebase.initializeApp(config);
-      var database = firebase.database();
-
-      firebase.auth().onAuthStateChanged(function(user) {
-        if (user) {
-          // User is signed in.
-          var isAnonymous = user.isAnonymous;
-          var uid = user.uid;
-          console.log("firebase login: " + uid + ":" + isAnonymous);
-	    console.log(database);
-
-	    database.ref('points').on('value', function(snapshot) {
-		console.log(snapshot.val());
-		// Data for the markers consisting of a name, a LatLng and a zIndex for the
-		// order in which these markers should display on top of each other.
-		for (var key in snapshot.val()) { 
-		    console.log(key);
-		    harveyes.push(snapshot.val()[key]);
-		}
-		setMarkers(map);
-	    });
-        } else {
-          // User is signed out. ignore
-          // ...
-        }
-      });
-
-      firebase.auth().signInAnonymously().catch(function(error) {
-        // Handle Errors here.
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        alert("couldn't sign into firebase. error:" + error.message);
-      });
-
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/3.2.0/firebase-storage.js"></script>
     
+    <script>
+    // Initialize Firebase
+var harveyes = [];
+var harveyShape = null;
+var harveyImage = null;
+
+var config = {
+    apiKey: "{{{fbase_apikey}}}",
+    authDomain: "harveymap-8240b.firebaseapp.com",
+    databaseURL: "https://harveymap-8240b.firebaseio.com",
+    storageBucket: "harveymap-8240b.appspot.com",
+};
+firebase.initializeApp(config);
+var database = firebase.database();
+var storageRef = firebase.storage().ref();
+
+// Marker sizes are expressed as a Size of X,Y where the origin of the image
+// (0,0) is located in the top left of the image.
+
+// Origins, anchor positions and coordinates of the marker increase in the X
+// direction to the right and in the Y direction down.
+
+function createNewMarker(marker, title, imgurl) { 
+    // append to database
+    
+    // set a new marker with a harvey
+    var newmarker = new google.maps.Marker({
+	position: {lat: marker.getPosition().lat(), lng: marker.getPosition().lng() },
+	map: map,
+	icon: harveyImage,
+	shape: harveyShape,
+   	title: title,
+	zIndex: 1,
+	myIndex: 0 // stash away the index for later use
+    });
+    
+    newmarker.addListener('click', function() {
+	map.setZoom(8);
+	map.setCenter(this.getPosition());
+	console.log(this.getPosition().lat());
+	console.log(this.getPosition().lng());
+	console.log(this.myIndex);
+    });
+    
+    database.ref('points').push([title, marker.getPosition().lat(), marker.getPosition().lng(), 1, imgurl]);
+
+    // remove the old info marker
+    marker.setMap(null);
+    marker = null;
+}
+
+
+function handleFileSelect(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    var file = evt.target.files[0];
+    var metadata = {
+        'contentType': file.type
+    };
+    // Push to child path.
+    var uploadTask = storageRef.child('images/' + file.name).put(file, metadata);
+    // Listen for errors and completion of the upload.
+    // [START oncomplete]
+    uploadTask.on('state_changed', function(snapshot) { 
+	// Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+	var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+	$("#progress").html('Upload is ' + progress.toFixed(2) + '% done');
+    },
+    function(error) {
+        console.error('Upload failed:', error);
+    }, function() {
+        console.log('Uploaded',uploadTask.snapshot.totalBytes,'bytes.');
+        console.log(uploadTask.snapshot.metadata);
+        var url = uploadTask.snapshot.metadata.downloadURLs[0];
+        console.log('File available at', url);
+	createNewMarker(marker, $("#newtitle").val(), url);
+    });
+    // [END oncomplete]
+}
+
+firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+        // User is signed in.
+        var isAnonymous = user.isAnonymous;
+        var uid = user.uid;
+        console.log("firebase login: " + uid + ":" + isAnonymous);
+	console.log(database);
+	
+	database.ref('points').on('value', function(snapshot) {
+	    console.log(snapshot.val());
+	    // Data for the markers consisting of a name, a LatLng and a zIndex for the
+	    // order in which these markers should display on top of each other.
+	    for (var key in snapshot.val()) { 
+		console.log(key);
+		harveyes.push(snapshot.val()[key]);
+	    }
+	    setMarkers(map);
+	});
+    } else {
+        // User is signed out. ignore
+        // ...
+    }
+});
+
+firebase.auth().signInAnonymously().catch(function(error) {
+    // Handle Errors here.
+    var errorCode = error.code;
+    var errorMessage = error.message;
+    alert("couldn't sign into firebase. error:" + error.message);
+});
+
+</script>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
     <title>HarveyMap</title>
@@ -68,7 +135,6 @@
         height: 100%;
       }
       #floating-panel {
-	  position: absolute;
 	  top: 10px;
 	  left: 25%;
 	  z-index: 5;
@@ -79,20 +145,22 @@
 	  font-family: 'Roboto','sans-serif';
 	  line-height: 30px;
 	  padding-left: 10px;
+	  padding-top: 5px;
+	  padding-bottom: 5px;
       }
     </style>
   </head>
   <body>
-    <div id="floating-panel">
-    <input id="address" type="textbox" value="San Francisco, CA">
-      <input id="submit" type="button" value="Jump to Address">
-    </div>
-
     <h1>{{{title}}}</h1>
 
     <p>
-    <b>To upload a new harvey, click an unused location on the map, then click "Upload Photo"</b>
+    <b>To upload a new harvey, click an unused location on the map, then click "Choose File"</b>
     </p>
+
+    <div id="floating-panel">
+    <input id="address" type="textbox" value="San Francisco, CA">
+    <input id="submit" type="button" value="Jump to Address">
+    </div>
 
     <div id="map"></div>
     <script>
@@ -105,27 +173,51 @@
       var infowindow = null;
 
       function initMap() {
+	  harveyImage = {
+              url: '/images/harvey-flag-64x56.jpg',
+              // This marker is 20 pixels wide by 32 pixels high.
+              size: new google.maps.Size(64, 56),
+              // The origin for this image is (0, 0).
+              origin: new google.maps.Point(0, 0),
+              // The anchor for this image is the base of the flagpole at (0, 32).
+              anchor: new google.maps.Point(0, 56)
+	  };
+	  // Shapes define the clickable region of the icon. The type defines an HTML
+	  // <area> element 'poly' which traces out a polygon as a series of X,Y points.
+	  // The final coordinate closes the poly by connecting to the first coordinate.
+	  harveyShape = {
+              coords: [1, 1, 64, 56],
+              type: 'rect'
+	  };
+
 	  infowindow = new google.maps.InfoWindow(
 	      { 
  		  size: new google.maps.Size(150,50)
 	      });
 
+	  // center on DNA Lounge
           map = new google.maps.Map(document.getElementById('map'), {
               zoom: 10,
-              center: {lat: -33.9, lng: 151.2}
+              center: {lat: 37.77096704197042,
+		       lng: -122.41276860237122}
           });
 
 	  var geocoder = new google.maps.Geocoder();
 
 	  // setup our click listener
-	  
+  
 	  google.maps.event.addListener(map, 'click', function(event) {
 	      //call function to create marker
               if (marker) {
 		  marker.setMap(null);
 		  marker = null;
               }
-	      marker = createMarker(event.latLng, "name", "<b>New Harvey Point</b><br>"+event.latLng+"<br>"+"<a href=\"\">Upload a Photo</a>");
+
+	      marker = createMarker(event.latLng, "name", "<h2><b>Place a photo</b></h2>" + 
+				    "<b> Title:</b> <input type=\"text\" id=\"newtitle\" name=\"newtitle\"> <br>" +
+				    "<input type=\"file\" id=\"file\" name=\"file\"> </p>" +
+				    "<div id=\"progress\"></div>");
+	      document.getElementById('file').addEventListener('change', handleFileSelect, false);
 	  });
 
 	  // set up the geocoder
@@ -152,59 +244,29 @@
       function setMarkers(map) {
         // Adds markers to the map.
 
-        // Marker sizes are expressed as a Size of X,Y where the origin of the image
-        // (0,0) is located in the top left of the image.
-
-        // Origins, anchor positions and coordinates of the marker increase in the X
-        // direction to the right and in the Y direction down.
-        var image = {
-          url: '/images/harvey-flag-64x56.jpg',
-          // This marker is 20 pixels wide by 32 pixels high.
-          size: new google.maps.Size(64, 56),
-          // The origin for this image is (0, 0).
-          origin: new google.maps.Point(0, 0),
-          // The anchor for this image is the base of the flagpole at (0, 32).
-          anchor: new google.maps.Point(0, 56)
-        };
-        // Shapes define the clickable region of the icon. The type defines an HTML
-        // <area> element 'poly' which traces out a polygon as a series of X,Y points.
-        // The final coordinate closes the poly by connecting to the first coordinate.
-        var shape = {
-          coords: [1, 1, 64, 56],
-          type: 'rect'
-        };
-
         for (var i = 0; i < harveyes.length; i++) {
           var harvey = harveyes[i];
           var marker = new google.maps.Marker({
-            position: {lat: harvey[1], lng: harvey[2]},
-            map: map,
-            icon: image,
-            shape: shape,
-            title: harvey[0],
-            zIndex: harvey[3],
-            myIndex: i // stash away the index for later use
-          });
+              position: {lat: harvey[1], lng: harvey[2]},
+              map: map,
+              icon: harveyImage,
+              shape: harveyShape,
+              title: harvey[0],
+              zIndex: harvey[3],
+	      url: harvey[4],
+              myIndex: i // stash away the index for later use
+	  });
 
           marker.addListener('click', function() {
-             map.setZoom(8);
-             map.setCenter(this.getPosition());
-             console.log(this.getPosition().lat());
-             console.log(this.getPosition().lng());
-             console.log(this.myIndex);
-          });
-
-// mouse over routines, I don't like them but will preserve them.
-//          marker.addListener('mouseover', function() { 
-//             this.setIcon('http://www.christielakekids.com/_images/map_pins/events/canoe-for-kids.png');
-//          });
-
-//          marker.addListener('mouseout', function() { 
-//             this.setIcon(image);
-//          });
-        }
+//	      map.setCenter(this.getPosition());
+	      infowindow.setContent("<img src=\"" + this.url + "\" width=500 /><p><b>" + this.title + "</b></p>"); 
+	      infowindow.open(map,this);
+	      console.log(this.getPosition().lat());
+	      console.log(this.getPosition().lng());
+	      console.log(this.myIndex);
+	  });
+	}
       }
-
       function createMarker(latlng, name, html) {
 	  var contentString = html;
 	  var marker = new google.maps.Marker({
