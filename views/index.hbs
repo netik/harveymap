@@ -151,13 +151,19 @@ firebase.auth().signInAnonymously().catch(function(error) {
     </style>
   </head>
   <body>
-    <h1>{{{title}}}</h1>
+    <h1>Odd Salon: {{{title}}}</h1>
 
     <p>
-    <b>To upload a new harvey, click an unused location on the map, enter a new title and click "Choose File"</b><br>
-    <i>The upload will begin immediately after you've selected a file.</i>
+    Harvey markers on this map indicate that an image is available for you to view at that location.<br>
+    To view, just click on an existing marker.
     </p>
 
+    <p>
+    <b>To upload a new harvey image, click an unused location on the map, enter a new title and click "Choose File"</b><br>
+    <i>The upload will begin immediately after you've selected a file.</i> Please make sure your image contains our dear friend Harvey.
+    </p>
+
+    <p>Made with love in San Francisco by John Adams (@netik)</p>
     <div id="floating-panel">
     <input id="address" type="textbox" value="San Francisco, CA">
     <input id="submit" type="button" value="Jump to Address">
